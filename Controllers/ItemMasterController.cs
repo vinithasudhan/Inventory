@@ -427,8 +427,8 @@ namespace InventoryAPI.Controllers
             return Ok(res);
         }
 
-        [HttpPost("upload-excel")]
-        [HttpPost("upload-excel")]
+        [HttpPost("uploadexcel")]
+        
         public async Task<IActionResult> UploadExcel(IFormFile file)
         {
             try
@@ -458,6 +458,30 @@ namespace InventoryAPI.Controllers
             {
                 return StatusCode(500, ex.Message);
             }
+        }
+        [HttpPost("insertcategory")]
+        public async Task<IActionResult> Insert(category_master model)
+        {
+            var id = await itemclass.InsertCategory(model);
+            return Ok(id);
+        }
+        [HttpGet("getcategory")]
+        public async Task<IActionResult> GetAll()
+        {
+            var data = await itemclass.GetCategories();
+            return Ok(data);
+        }
+        [HttpPost("updatecategory")]
+        public async Task<IActionResult> Update(category_master model)
+        {
+            var result = await itemclass.UpdateCategory(model);
+            return Ok(result);
+        }
+        [HttpDelete("deletecategory")]
+        public async Task<IActionResult> DeleteCategory(long id)
+        {
+            var result = await itemclass.DeleteCategory(id);
+            return Ok(result);
         }
     }
 }

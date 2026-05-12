@@ -43,7 +43,9 @@ namespace InventoryAPI.Data
                         description,
                         categorycode,
                         subcategorycode,
+                        hsncode,
                         itemtype,
+                        gstpercentage,
                         uomcode,
                         purchaserate,
                         salesrate,
@@ -1408,23 +1410,68 @@ namespace InventoryAPI.Data
         }
         public async Task ProcessExcel(string filePath)
         {
+            ExcelPackage.License.SetNonCommercialPersonal("Vinitha");
+
             using (var package = new ExcelPackage(new FileInfo(filePath)))
             {
                 var worksheet = package.Workbook.Worksheets[0];
+
                 int rowCount = worksheet.Dimension.Rows;
 
                 var items = new List<item_master>();
 
-                for (int row = 2; row <= rowCount; row++) // skip header
+                for (int row = 2; row <= rowCount; row++)
                 {
+                    int.TryParse(worksheet.Cells[row, 4].Text, out int categorycode);
+                    int.TryParse(worksheet.Cells[row, 5].Text, out int subcategorycode);
+                    int.TryParse(worksheet.Cells[row, 7].Text, out int uomcode);
+
+                    decimal.TryParse(worksheet.Cells[row, 8].Text, out decimal purchaserate);
+                    decimal.TryParse(worksheet.Cells[row, 9].Text, out decimal salesrate);
+                    decimal.TryParse(worksheet.Cells[row, 10].Text, out decimal mrp);
+                    decimal.TryParse(worksheet.Cells[row, 11].Text, out decimal currentstock);
+                    decimal.TryParse(worksheet.Cells[row, 12].Text, out decimal minstock);
+                    decimal.TryParse(worksheet.Cells[row, 13].Text, out decimal reorderlevel);
+
+                    bool.TryParse(worksheet.Cells[row, 14].Text, out bool batchrequired);
+                    bool.TryParse(worksheet.Cells[row, 15].Text, out bool expiryrequired);
+                    bool.TryParse(worksheet.Cells[row, 16].Text, out bool serialrequired);
+
+                    int.TryParse(worksheet.Cells[row, 17].Text, out int brandcode);
+                    int.TryParse(worksheet.Cells[row, 18].Text, out int manufacturercode);
+                    int.TryParse(worksheet.Cells[row, 19].Text, out int taxcode);
+
+                    bool.TryParse(worksheet.Cells[row, 20].Text, out bool isactive);
+                    bool.TryParse(worksheet.Cells[row, 21].Text, out bool deleted);
+
+                    int.TryParse(worksheet.Cells[row, 23].Text, out int usercode);
+
                     var item = new item_master
                     {
                         itemname = worksheet.Cells[row, 1].Text,
                         shortname = worksheet.Cells[row, 2].Text,
                         description = worksheet.Cells[row, 3].Text,
-                        categorycode = int.Parse(worksheet.Cells[row, 4].Text),
-                        subcategorycode = int.Parse(worksheet.Cells[row, 5].Text),
-                        purchaserate = decimal.Parse(worksheet.Cells[row, 6].Text)
+                        categorycode = categorycode,
+                        subcategorycode = subcategorycode,
+                        itemtype = worksheet.Cells[row, 6].Text,
+                        uomcode = uomcode,
+                        purchaserate = purchaserate,
+                        salesrate = salesrate,
+                        mrp = mrp,
+                        currentstock = currentstock,
+                        minstock = minstock,
+                        reorderlevel = reorderlevel,
+                        batchrequired = batchrequired,
+                        expiryrequired = expiryrequired,
+                        serialrequired = serialrequired,
+                        brandcode = brandcode,
+                        manufacturercode = manufacturercode,
+                        taxcode = taxcode,
+                        isactive = isactive,
+                        deleted = deleted,
+                        createddate = DateTime.Now,
+                        usercode = usercode,
+                        tenantcode = worksheet.Cells[row, 24].Text
                     };
 
                     items.Add(item);
@@ -1433,19 +1480,191 @@ namespace InventoryAPI.Data
                 await InsertBulk(items);
             }
         }
+
         public async Task InsertBulk(List<item_master> items)
         {
             using (IDbConnection db = new NpgsqlConnection(con))
             {
-                string query = @"INSERT INTO item_master
-                        (itemname, shortname, description, categorycode, subcategorycode, purchaserate)
-                        VALUES
-                        (@itemname, @shortname, @description, @categorycode, @subcategorycode, @purchaserate)";
+                string query = @"
+        INSERT INTO item_master
+        (
+            itemname,
+            shortname,
+            description,
+            categorycode,
+            subcategorycode,
+            itemtype,
+            uomcode,
+            purchaserate,
+            salesrate,
+            mrp,
+            currentstock,
+            minstock,
+            reorderlevel,
+            batchrequired,
+            expiryrequired,
+            serialrequired,
+            brandcode,
+            manufacturercode,
+            taxcode,
+            isactive,
+            deleted,
+            createddate,
+            usercode,
+            tenantcode
+        )
+        VALUES
+        (
+            @itemname,
+            @shortname,
+            @description,
+            @categorycode,
+            @subcategorycode,
+            @itemtype,
+            @uomcode,
+            @purchaserate,
+            @salesrate,
+            @mrp,
+            @currentstock,
+            @minstock,
+            @reorderlevel,
+            @batchrequired,
+            @expiryrequired,
+            @serialrequired,
+            @brandcode,
+            @manufacturercode,
+            @taxcode,
+            @isactive,
+            @deleted,
+            @createddate,
+            @usercode,
+            @tenantcode
+        )";
 
-                foreach (var item in items)
+                await db.ExecuteAsync(query, items);
+            }
+        }
+        // INSERT
+        public async Task<long> InsertCategory(category_master category)
+        {
+            try
+            {
+                using (IDbConnection db = new NpgsqlConnection(con))
                 {
-                    await db.ExecuteAsync(query, item);
+                    db.Open();
+
+                    // Auto Generate categorycode
+                    long categorycode = await db.ExecuteScalarAsync<long>(
+                        "SELECT COALESCE(MAX(categorycode),0)+1 FROM category_master");
+
+                    category.categorycode = categorycode;
+
+                    string query = @"
+            INSERT INTO category_master
+            (
+                categorycode,
+                categoryname,
+                shortname,
+                description,
+                parentcategorycode,
+                isactive,
+                deleted,
+                createddate,
+                usercode,
+                tenantcode
+            )
+            VALUES
+            (
+                @categorycode,
+                @categoryname,
+                @shortname,
+                @description,
+                @parentcategorycode,
+                @isactive,
+                @deleted,
+                @createddate,
+                @usercode,
+                @tenantcode
+            )";
+
+                    await db.ExecuteAsync(query, category);
+
+                    return categorycode;
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Insert failed: " + ex.Message);
+            }
+        }
+        // GET ALL
+        public async Task<IEnumerable<category_master>> GetCategories()
+        {
+            try
+            {
+                using (IDbConnection db = new NpgsqlConnection(con))
+                {
+                    string query = "SELECT * FROM category_master ORDER BY categorycode";
+
+                    return await db.QueryAsync<category_master>(query);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Get failed: " + ex.Message);
+            }
+        }
+        // UPDATE
+        public async Task<bool> UpdateCategory(category_master category)
+        {
+            try
+            {
+                using (IDbConnection db = new NpgsqlConnection(con))
+                {
+                    string query = @"
+                UPDATE category_master
+                SET
+                    categoryname = @categoryname,
+                    shortname = @shortname,
+                    description = @description,
+                    parentcategorycode = @parentcategorycode,
+                    isactive = @isactive,
+                    deleted = @deleted,
+                    usercode = @usercode,
+                    tenantcode = @tenantcode
+                WHERE categorycode = @categorycode";
+
+                    int rows = await db.ExecuteAsync(query, category);
+
+                    return rows > 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Update failed: " + ex.Message);
+            }
+        }
+        // DELETE
+        public async Task<bool> DeleteCategory(long categorycode)
+        {
+            try
+            {
+                using (IDbConnection db = new NpgsqlConnection(con))
+                {
+                    string query = @"
+                DELETE FROM category_master
+                WHERE categorycode = @categorycode";
+
+                    int rows = await db.ExecuteAsync(
+                        query,
+                        new { categorycode });
+
+                    return rows > 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Delete failed: " + ex.Message);
             }
         }
     }

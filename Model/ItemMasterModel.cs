@@ -8,7 +8,9 @@
         public string description { get; set; }
         public int categorycode { get; set; }
         public int subcategorycode { get; set; }
+        public int hsnCode { get; set; }
         public string itemtype { get; set; }
+        public decimal gstpercentage { get; set; }
         public int uomcode { get; set; }
         public decimal purchaserate { get; set; }
         public decimal salesrate { get; set; }
@@ -286,5 +288,18 @@
     {
         public purchase_entry_master master { get; set; }
         public List<purchase_entry_detail> details { get; set; }
+    }
+    public class category_master
+    {
+        public long categorycode { get; set; }
+        public string categoryname { get; set; }
+        public string shortname { get; set; }
+        public string description { get; set; }
+        public int parentcategorycode { get; set; }
+        public bool isactive { get; set; }
+        public bool deleted { get; set; }
+        public DateTime createddate { get; set; }
+        public int usercode { get; set; }
+        public string tenantcode { get; set; }
     }
 }

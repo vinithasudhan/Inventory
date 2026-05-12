@@ -1,7 +1,14 @@
 using InventoryAPI.Data;
+using Microsoft.AspNetCore.Http.Features;
+using OfficeOpenXml;
 
 var builder = WebApplication.CreateBuilder(args);
+ExcelPackage.License.SetNonCommercialPersonal("Vinitha");
 
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 104857600; // 100MB
+});
 // Add controllers
 builder.Services.AddControllers();
 

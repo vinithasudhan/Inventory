@@ -483,5 +483,33 @@ namespace InventoryAPI.Controllers
             var result = await itemclass.DeleteCategory(id);
             return Ok(result);
         }
+        [HttpPost("insertparentcategory")]
+        public async Task<IActionResult> InsertParentCategory(parent_category_master model)
+        {
+            var result = await itemclass.InsertParentCategory(model);
+            return Ok(result);
+        }
+
+        // GET ALL
+        [HttpGet("getparentcategory")]
+        public async Task<IActionResult> GetParentCategories()
+        {
+            var result = await itemclass.GetParentCategories();
+            return Ok(result);
+        }
+        [HttpPost("updateparentcategory")]
+        public async Task<IActionResult> UpdateParentCategory(parent_category_master model)
+        {
+            var result = await itemclass.UpdateParentCategory(model);
+            return Ok(result);
+        }
+
+        // DELETE
+        [HttpDelete("deleteparentcategory")]
+        public async Task<IActionResult> DeleteParentCategory(int parentcategorycode)
+        {
+            var result = await itemclass.DeleteParentCategory(parentcategorycode);
+            return Ok(result);
+        }
     }
 }

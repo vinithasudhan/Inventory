@@ -1667,5 +1667,85 @@ namespace InventoryAPI.Data
                 throw new Exception("Delete failed: " + ex.Message);
             }
         }
+        public async Task<string> InsertParentCategory(parent_category_master model)
+        {
+            using (IDbConnection db = new NpgsqlConnection(con))
+            {
+                string query = @"
+            INSERT INTO parent_category_master
+            (
+                parentcategorycode,
+                parentcategoryname,
+                shortname,
+                description,
+                isactive,
+                deleted,
+                createddate
+            )
+            VALUES
+            (
+                @parentcategorycode,
+                @parentcategoryname,
+                @shortname,
+                @description,
+                @isactive,
+                @deleted,
+                @createddate
+            )";
+
+                await db.ExecuteAsync(query, model);
+                return "Inserted Successfully";
+            }
+        }
+
+        // GET ALL
+        public async Task<IEnumerable<parent_category_master>> GetParentCategories()
+        {
+            using (IDbConnection db = new NpgsqlConnection(con))
+            {
+                string query = "SELECT * FROM parent_category_master ORDER BY parentcategorycode";
+
+                return await db.QueryAsync<parent_category_master>(query);
+            }
+        }
+
+        
+      
+
+        // UPDATE
+        public async Task<string> UpdateParentCategory(parent_category_master model)
+        {
+            using (IDbConnection db = new NpgsqlConnection(con))
+            {
+                string query = @"
+            UPDATE parent_category_master
+            SET
+                parentcategoryname = @parentcategoryname,
+                shortname = @shortname,
+                description = @description,
+                isactive = @isactive,
+                deleted = @deleted
+            WHERE parentcategorycode = @parentcategorycode";
+
+                await db.ExecuteAsync(query, model);
+
+                return "Updated Successfully";
+            }
+        }
+
+        // DELETE
+        public async Task<string> DeleteParentCategory(int parentcategorycode)
+        {
+            using (IDbConnection db = new NpgsqlConnection(con))
+            {
+                string query = @"
+            DELETE FROM parent_category_master
+            WHERE parentcategorycode = @parentcategorycode";
+
+                await db.ExecuteAsync(query, new { parentcategorycode });
+
+                return "Deleted Successfully";
+            }
+        }
     }
 }

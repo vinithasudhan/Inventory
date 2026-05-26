@@ -403,53 +403,53 @@ namespace InventoryAPI.Data
                     try
                     {
                         string masterQuery = @"
-                    INSERT INTO public.purchase_master
-                    (
-                        billno,
-                        billdate,
-                        invoiceno,
-                        invoicedate,
-                        vendorcode,
-                        grossamount,
-                        discountamount,
-                        taxamount,
-                        netamount,
-                        paymentmode,
-                        paymentstatus,
-                        currencycode,
-                        remarks,
-                        isactive,
-                        deleted,
-                        createddate,
-                        usercode,
-                        tenantcode,
-                        branchcode,
-                        companycode
-                    )
-                    VALUES
-                    (
-                        @billno,
-                        @billdate,
-                        @invoiceno,
-                        @invoicedate,
-                        @vendorcode,
-                        @grossamount,
-                        @discountamount,
-                        @taxamount,
-                        @netamount,
-                        @paymentmode,
-                        @paymentstatus,
-                        @currencycode,
-                        @remarks,
-                        @isactive,
-                        @deleted,
-                        CURRENT_TIMESTAMP,
-                        @usercode,
-                        @tenantcode,
-                        @branchcode,
-                        @companycode
-                    )
-                    RETURNING purchasecode;";
+                INSERT INTO public.purchase_master
+                (
+                    billno,
+                    billdate,
+                    invoiceno,
+                    invoicedate,
+                    vendorcode,
+                    grossamount,
+                    discountamount,
+                    taxamount,
+                    netamount,
+                    paymentmode,
+                    paymentstatus,
+                    currencycode,
+                    remarks,
+                    isactive,
+                    deleted,
+                    createddate,
+                    usercode,
+                    tenantcode,
+                    branchcode,
+                    companycode
+                )
+                VALUES
+                (
+                    @billno,
+                    @billdate,
+                    @invoiceno,
+                    @invoicedate,
+                    @vendorcode,
+                    @grossamount,
+                    @discountamount,
+                    @taxamount,
+                    @netamount,
+                    @paymentmode,
+                    @paymentstatus,
+                    @currencycode,
+                    @remarks,
+                    @isactive,
+                    @deleted,
+                    CURRENT_TIMESTAMP,
+                    @usercode,
+                    @tenantcode,
+                    @branchcode,
+                    @companycode
+                )
+                RETURNING purchasecode;";
 
                         long purchasecode = await db.ExecuteScalarAsync<long>(
                             masterQuery,
@@ -458,44 +458,52 @@ namespace InventoryAPI.Data
                         );
 
                         string detailQuery = @"
-                    INSERT INTO public.purchase_detail
-                    (
-                        purchasecode,
-                        itemcode,
-                        quantity,
-                        freequantity,
-                        uomcode,
-                        rate,
-                        discountpercentage,
-                        discountamount,
-                        taxpercentage,
-                        taxamount,
-                        amount,
-                        totalamount,
-                        batchno,
-                        manufacturingdate,
-                        expirydate,
-                        tenantcode
-                    )
-                    VALUES
-                    (
-                        @purchasecode,
-                        @itemcode,
-                        @quantity,
-                        @freequantity,
-                        @uomcode,
-                        @rate,
-                        @discountpercentage,
-                        @discountamount,
-                        @taxpercentage,
-                        @taxamount,
-                        @amount,
-                        @totalamount,
-                        @batchno,
-                        @manufacturingdate,
-                        @expirydate,
-                        @tenantcode
-                    );";
+                INSERT INTO public.purchase_detail
+                (
+                    purchasecode,
+                    itemcode,
+                    quantity,
+                    freequantity,
+                    uomcode,
+                    rate,
+                    discountpercentage,
+                    discountamount,
+                    taxpercentage,
+                    taxamount,
+                    amount,
+                    totalamount,
+                    batchno,
+                    manufacturingdate,
+                    expirydate,
+                    orderedqty,
+                    receivedqty,
+                    rejectedqty,
+                    warehousecode,
+                    tenantcode
+                )
+                VALUES
+                (
+                    @purchasecode,
+                    @itemcode,
+                    @quantity,
+                    @freequantity,
+                    @uomcode,
+                    @rate,
+                    @discountpercentage,
+                    @discountamount,
+                    @taxpercentage,
+                    @taxamount,
+                    @amount,
+                    @totalamount,
+                    @batchno,
+                    @manufacturingdate,
+                    @expirydate,
+                    @orderedqty,
+                    @receivedqty,
+                    @rejectedqty,
+                    @warehousecode,
+                    @tenantcode
+                );";
 
                         foreach (var item in request.details)
                         {
@@ -530,42 +538,64 @@ namespace InventoryAPI.Data
                 {
                     try
                     {
-                        // Update Master
-                        string masterQuery = @"
-                    UPDATE public.purchase_master
-                    SET
-                        billno = @billno,
-                        billdate = @billdate,
-                        invoiceno = @invoiceno,
-                        invoicedate = @invoicedate,
-                        vendorcode = @vendorcode,
-                        grossamount = @grossamount,
-                        discountamount = @discountamount,
-                        taxamount = @taxamount,
-                        netamount = @netamount,
-                        paymentmode = @paymentmode,
-                        paymentstatus = @paymentstatus,
-                        currencycode = @currencycode,
-                        remarks = @remarks,
-                        isactive = @isactive,
-                        deleted = @deleted,
-                        modifieddate = CURRENT_TIMESTAMP,
-                        usercode = @usercode,
-                        tenantcode = @tenantcode,
-                        branchcode = @branchcode,
-                        companycode = @companycode
-                    WHERE purchasecode = @purchasecode;";
+                        // Check master exists
+                        string checkQuery = @"
+                SELECT COUNT(*)
+                FROM public.purchase_master
+                WHERE purchasecode = @purchasecode;";
 
-                        await db.ExecuteAsync(
+                        var exists = await db.ExecuteScalarAsync<int>(
+                            checkQuery,
+                            new { purchasecode = request.master.purchasecode },
+                            transaction
+                        );
+
+                        if (exists == 0)
+                        {
+                            throw new Exception("Purchase record not found");
+                        }
+
+                        // Update master
+                        string masterQuery = @"
+                UPDATE public.purchase_master
+                SET
+                    billno = @billno,
+                    billdate = @billdate,
+                    invoiceno = @invoiceno,
+                    invoicedate = @invoicedate,
+                    vendorcode = @vendorcode,
+                    grossamount = @grossamount,
+                    discountamount = @discountamount,
+                    taxamount = @taxamount,
+                    netamount = @netamount,
+                    paymentmode = @paymentmode,
+                    paymentstatus = @paymentstatus,
+                    currencycode = @currencycode,
+                    remarks = @remarks,
+                    isactive = @isactive,
+                    deleted = @deleted,
+                    modifieddate = CURRENT_TIMESTAMP,
+                    usercode = @usercode,
+                    tenantcode = @tenantcode,
+                    branchcode = @branchcode,
+                    companycode = @companycode
+                WHERE purchasecode = @purchasecode;";
+
+                        var masterRows = await db.ExecuteAsync(
                             masterQuery,
                             request.master,
                             transaction
                         );
 
+                        if (masterRows == 0)
+                        {
+                            throw new Exception("Purchase update failed");
+                        }
+
                         // Delete old details
                         string deleteDetailQuery = @"
-                    DELETE FROM public.purchase_detail
-                    WHERE purchasecode = @purchasecode;";
+                DELETE FROM public.purchase_detail
+                WHERE purchasecode = @purchasecode;";
 
                         await db.ExecuteAsync(
                             deleteDetailQuery,
@@ -575,47 +605,48 @@ namespace InventoryAPI.Data
 
                         // Insert new details
                         string insertDetailQuery = @"
-                    INSERT INTO public.purchase_detail
-                    (
-                        purchasecode,
-                        itemcode,
-                        quantity,
-                        freequantity,
-                        uomcode,
-                        rate,
-                        discountpercentage,
-                        discountamount,
-                        taxpercentage,
-                        taxamount,
-                        amount,
-                        totalamount,
-                        batchno,
-                        manufacturingdate,
-                        expirydate,
-                        tenantcode
-                    )
-                    VALUES
-                    (
-                        @purchasecode,
-                        @itemcode,
-                        @quantity,
-                        @freequantity,
-                        @uomcode,
-                        @rate,
-                        @discountpercentage,
-                        @discountamount,
-                        @taxpercentage,
-                        @taxamount,
-                        @amount,
-                        @totalamount,
-                        @batchno,
-                        @manufacturingdate,
-                        @expirydate,
-                        @tenantcode
-                    );";
+                INSERT INTO public.purchase_detail
+                (
+                    purchasecode,
+                    itemcode,
+                    quantity,
+                    freequantity,
+                    uomcode,
+                    rate,
+                    discountpercentage,
+                    discountamount,
+                    taxpercentage,
+                    taxamount,
+                    amount,
+                    totalamount,
+                    batchno,
+                    manufacturingdate,
+                    expirydate,
+                    tenantcode
+                )
+                VALUES
+                (
+                    @purchasecode,
+                    @itemcode,
+                    @quantity,
+                    @freequantity,
+                    @uomcode,
+                    @rate,
+                    @discountpercentage,
+                    @discountamount,
+                    @taxpercentage,
+                    @taxamount,
+                    @amount,
+                    @totalamount,
+                    @batchno,
+                    @manufacturingdate,
+                    @expirydate,
+                    @tenantcode
+                );";
 
                         foreach (var item in request.details)
                         {
+                            // assign master purchasecode
                             item.purchasecode = request.master.purchasecode;
 
                             await db.ExecuteAsync(
@@ -632,7 +663,10 @@ namespace InventoryAPI.Data
                     catch (Exception ex)
                     {
                         transaction.Rollback();
-                        throw new Exception("Purchase update failed: " + ex.Message);
+
+                        throw new Exception(
+                            "Purchase update failed: " + ex.Message
+                        );
                     }
                 }
             }
@@ -1209,7 +1243,7 @@ namespace InventoryAPI.Data
                 }
             }
         }
-        public async Task<string> UpdatePurchaseEntry(purchase_entry_request request)
+        public async Task<long> UpdatePurchaseEntry(purchase_entry_request request)
         {
             using (IDbConnection db = new NpgsqlConnection(con))
             {
@@ -1219,129 +1253,176 @@ namespace InventoryAPI.Data
                 {
                     try
                     {
-                        var entryId = request.master.purchaseentrycode;
+                        // CHECK MASTER EXISTS
+                        string checkQuery = @"
+                SELECT COUNT(*)
+                FROM public.purchase_entry_master
+                WHERE purchaseentrycode = @purchaseentrycode;";
 
-                        // 1️⃣ Reverse Stock
-                        var oldItems = await db.QueryAsync<purchase_entry_detail>(
-                            "SELECT * FROM purchase_entry_detail WHERE purchaseentrycode = @id",
-                            new { id = entryId }, transaction);
+                        int exists = await db.ExecuteScalarAsync<int>(
+                            checkQuery,
+                            new
+                            {
+                                purchaseentrycode =
+                                    request.master.purchaseentrycode
+                            },
+                            transaction
+                        );
 
-                        foreach (var item in oldItems)
+                        if (exists == 0)
                         {
-                            await db.ExecuteAsync(@"
-                        UPDATE stock_master
-                        SET purchasedqty = purchasedqty - @qty,
-                            closingstock = closingstock - @qty
-                        WHERE itemcode = @itemcode;",
-                                new { qty = item.receivedqty, item.itemcode }, transaction);
+                            throw new Exception(
+                                "Purchase Entry not found"
+                            );
                         }
 
-                        // 2️⃣ Update purchase_entry_master
-                        await db.ExecuteAsync(@"
-                    UPDATE purchase_entry_master
-                    SET billno=@billno,
-                        billdate=@billdate,
-                        invoiceno=@invoiceno,
-                        invoicedate=@invoicedate,
-                        vendorcode=@vendorcode,
-                        totalqty=@totalqty,
-                        receivedqty=@receivedqty,
-                        grossamount=@grossamount,
-                        discountamount=@discountamount,
-                        taxamount=@taxamount,
-                        netamount=@netamount,
-                        paymentmode=@paymentmode,
-                        paymentstatus=@paymentstatus,
-                        remarks=@remarks,
-                        modifieddate=CURRENT_TIMESTAMP
-                    WHERE purchaseentrycode=@purchaseentrycode;",
-                            request.master, transaction);
+                        // UPDATE MASTER
+                        string masterQuery = @"
+                UPDATE public.purchase_entry_master
+                SET
+                    grnno = @grnno,
+                    grndate = @grndate,
+                    receivedby = @receivedby,
 
-                        // 3️⃣ Delete old entry details
+                    billno = @billno,
+                    billdate = @billdate,
+                    invoiceno = @invoiceno,
+                    invoicedate = @invoicedate,
+
+                    vendorcode = @vendorcode,
+
+                    totalqty = @totalqty,
+                    receivedqty = @receivedqty,
+
+                    grossamount = @grossamount,
+                    discountamount = @discountamount,
+                    taxamount = @taxamount,
+                    othercharges = @othercharges,
+                    netamount = @netamount,
+
+                    paymentmode = @paymentmode,
+                    paymentstatus = @paymentstatus,
+
+                    approvalstatus = @approvalstatus,
+                    posted = @posted,
+
+                    remarks = @remarks,
+
+                    isactive = @isactive,
+                    deleted = @deleted,
+
+                    modifieddate = CURRENT_TIMESTAMP,
+
+                    usercode = @usercode,
+
+                    tenantcode = @tenantcode,
+                    branchcode = @branchcode,
+                    companycode = @companycode
+
+                WHERE purchaseentrycode =
+                    @purchaseentrycode;";
+
                         await db.ExecuteAsync(
-                            "DELETE FROM purchase_entry_detail WHERE purchaseentrycode=@id",
-                            new { id = entryId }, transaction);
+                            masterQuery,
+                            request.master,
+                            transaction
+                        );
 
-                        // 4️⃣ Insert new entry details
-                        foreach (var item in request.details)
-                        {
-                            item.purchaseentrycode = entryId;
+                        // DELETE OLD DETAILS
+                        string deleteQuery = @"
+                DELETE FROM public.purchase_entry_detail
+                WHERE purchaseentrycode =
+                    @purchaseentrycode;";
 
-                            await db.ExecuteAsync(@"
-                        INSERT INTO purchase_entry_detail
-                        (purchaseentrycode,itemcode,receivedqty,rate,amount,totalamount,tenantcode)
-                        VALUES
-                        (@purchaseentrycode,@itemcode,@receivedqty,@rate,@amount,@totalamount,@tenantcode);",
-                                item, transaction);
-                        }
-
-                        // 5️⃣ Update purchase_master
-                        await db.ExecuteAsync(@"
-                    UPDATE purchase_master
-                    SET billno=@billno,
-                        billdate=@billdate,
-                        invoiceno=@invoiceno,
-                        invoicedate=@invoicedate,
-                        vendorcode=@vendorcode,
-                        grossamount=@grossamount,
-                        discountamount=@discountamount,
-                        taxamount=@taxamount,
-                        netamount=@netamount,
-                        paymentmode=@paymentmode,
-                        paymentstatus=@paymentstatus,
-                        remarks=@remarks,
-                        modifieddate=CURRENT_TIMESTAMP
-                    WHERE grncode=@purchaseentrycode;",
-                            request.master, transaction);
-
-                        // 6️⃣ Get purchasecode
-                        var purchasecode = await db.ExecuteScalarAsync<long>(
-                            "SELECT purchasecode FROM purchase_master WHERE grncode=@id",
-                            new { id = entryId }, transaction);
-
-                        // 7️⃣ Delete old purchase_detail
                         await db.ExecuteAsync(
-                            "DELETE FROM purchase_detail WHERE purchasecode=@pc",
-                            new { pc = purchasecode }, transaction);
+                            deleteQuery,
+                            new
+                            {
+                                purchaseentrycode =
+                                    request.master.purchaseentrycode
+                            },
+                            transaction
+                        );
 
-                        // 8️⃣ Insert new purchase_detail
+                        // INSERT DETAILS
+                        string detailQuery = @"
+                INSERT INTO public.purchase_entry_detail
+                (
+                    purchaseentrycode,
+                    itemcode,
+
+                    orderedqty,
+                    receivedqty,
+                    rejectedqty,
+                    quantity,
+
+                    rate,
+                    discountpercentage,
+                    discountamount,
+                    taxpercentage,
+                    taxamount,
+
+                    amount,
+                    totalamount,
+
+                    batchno,
+                    manufacturingdate,
+                    expirydate,
+
+                    warehousecode,
+                    tenantcode
+                )
+                VALUES
+                (
+                    @purchaseentrycode,
+                    @itemcode,
+
+                    @orderedqty,
+                    @receivedqty,
+                    @rejectedqty,
+                    @quantity,
+
+                    @rate,
+                    @discountpercentage,
+                    @discountamount,
+                    @taxpercentage,
+                    @taxamount,
+
+                    @amount,
+                    @totalamount,
+
+                    @batchno,
+                    @manufacturingdate,
+                    @expirydate,
+
+                    @warehousecode,
+                    @tenantcode
+                );";
+
                         foreach (var item in request.details)
                         {
-                            await db.ExecuteAsync(@"
-                        INSERT INTO purchase_detail
-                        (purchasecode,itemcode,quantity,rate,totalamount,tenantcode)
-                        VALUES
-                        (@purchasecode,@itemcode,@qty,@rate,@totalamount,@tenantcode);",
-                                new
-                                {
-                                    purchasecode,
-                                    item.itemcode,
-                                    qty = item.receivedqty,
-                                    item.rate,
-                                    item.totalamount,
-                                    item.tenantcode
-                                },
-                                transaction);
-                        }
+                            // VERY IMPORTANT
+                            item.purchaseentrycode =
+                                request.master.purchaseentrycode;
 
-                        // 9️⃣ Add New Stock
-                        foreach (var item in request.details)
-                        {
-                            await db.ExecuteAsync(@"
-                        UPDATE stock_master
-                        SET purchasedqty = purchasedqty + @qty,
-                            closingstock = closingstock + @qty
-                        WHERE itemcode = @itemcode;",
-                                new { qty = item.receivedqty, item.itemcode }, transaction);
+                            await db.ExecuteAsync(
+                                detailQuery,
+                                item,
+                                transaction
+                            );
                         }
 
                         transaction.Commit();
-                        return "Success";
+
+                        return request.master.purchaseentrycode;
                     }
                     catch (Exception ex)
                     {
                         transaction.Rollback();
-                        throw new Exception("Update failed: " + ex.Message);
+
+                        throw new Exception(
+                            "Update failed: " + ex.Message
+                        );
                     }
                 }
             }
@@ -1709,8 +1790,8 @@ namespace InventoryAPI.Data
             }
         }
 
-        
-      
+
+
 
         // UPDATE
         public async Task<string> UpdateParentCategory(parent_category_master model)
@@ -1745,6 +1826,105 @@ namespace InventoryAPI.Data
                 await db.ExecuteAsync(query, new { parentcategorycode });
 
                 return "Deleted Successfully";
+            }
+        }
+        public async Task<string> InsertLedger(ledger_master model)
+        {
+            using (IDbConnection db = new NpgsqlConnection(con))
+            {
+                string query = @"
+        INSERT INTO ledger_master
+        (
+            ledgercode,
+            ledgername,
+            lcode,
+            ldgcode,
+            taxtype,
+            taxsubtype,
+            taxpercentage,
+            gstpercentage,
+            hsncode,
+            isactive,
+            deleted,
+            createddate
+        )
+        VALUES
+        (
+            @ledgercode,
+            @ledgername,
+            @lcode,
+            @ldgcode,
+            @taxtype,
+            @taxsubtype,
+            @taxpercentage,
+            @gstpercentage,
+            @hsncode,
+            @isactive,
+            @deleted,
+            @createddate
+        )";
+
+                await db.ExecuteAsync(query, model);
+
+                return "Inserted Successfully";
+            }
+        }
+        public async Task<IEnumerable<ledger_master>> GetLedger()
+        {
+            using (IDbConnection db = new NpgsqlConnection(con))
+            {
+                string query = "SELECT * FROM ledger_master ORDER BY ledgercode";
+
+                return await db.QueryAsync<ledger_master>(query);
+            }
+        }
+        public async Task<string> UpdateLedger(ledger_master model)
+        {
+            try
+            {
+                using (IDbConnection db = new NpgsqlConnection(con))
+                {
+                    string query = @"
+        UPDATE ledger_master
+        SET
+            ledgername = @ledgername,
+            lcode = @lcode,
+            ldgcode = @ldgcode,
+            taxtype = @taxtype,
+            taxsubtype = @taxsubtype,
+            taxpercentage = @taxpercentage,
+            gstpercentage = @gstpercentage,
+            hsncode = @hsncode,
+            isactive = @isactive,
+            deleted = @deleted
+        WHERE ledgercode = @ledgercode";
+
+                    await db.ExecuteAsync(query, model);
+
+                    return "Updated Successfully";
+                }
+            }
+            catch (Exception ex)
+            {
+                return ex.Message.ToString();
+            }
+        }
+        public async Task<bool> DeleteLedger(int ledgercode, string tenantcode)
+        {
+            using (IDbConnection db = new NpgsqlConnection(con))
+            {
+                string query = @"
+            DELETE FROM ledger_master
+            WHERE ledgercode = @ledgercode
+            AND tenantcode = @tenantcode";
+
+                var rowsAffected = await db.ExecuteAsync(query, new
+                {
+                    ledgercode,
+                    tenantcode
+                });
+
+                return rowsAffected > 0;
             }
         }
     }

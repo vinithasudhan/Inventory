@@ -95,25 +95,51 @@
         public string? branchcode { get; set; }
         public string? companycode { get; set; }
         public long grncode { get; set; }
-    } 
+    }
     public class purchase_detail
     {
         public long purchasedetailcode { get; set; }
+
         public long purchasecode { get; set; }
+
         public long itemcode { get; set; }
+
         public decimal quantity { get; set; }
+
         public decimal freequantity { get; set; }
+
         public long? uomcode { get; set; }
+
         public decimal rate { get; set; }
+
         public decimal discountpercentage { get; set; }
+
         public decimal discountamount { get; set; }
+
         public decimal taxpercentage { get; set; }
+
         public decimal taxamount { get; set; }
+
         public decimal amount { get; set; }
+
         public decimal totalamount { get; set; }
+
         public string? batchno { get; set; }
+
         public DateTime? manufacturingdate { get; set; }
+
         public DateTime? expirydate { get; set; }
+
+        // New Fields
+
+        public decimal orderedqty { get; set; }
+
+        public decimal receivedqty { get; set; }
+
+        public decimal rejectedqty { get; set; }
+
+        public long? warehousecode { get; set; }
+
         public string? tenantcode { get; set; }
     }
     public class purchase_request
@@ -277,8 +303,9 @@
         public decimal totalamount { get; set; }
 
         public string? batchno { get; set; }
-        public DateTime? manufacturingdate { get; set; }
-        public DateTime? expirydate { get; set; }
+        public DateTime manufacturingdate { get; set; }
+        public DateTime
+            expirydate { get; set; }
 
         public long? warehousecode { get; set; }
 
@@ -311,5 +338,24 @@
         public bool isactive { get; set; }
         public bool deleted { get; set; }
         public DateTime createddate { get; set; }
+    }
+    public class ledger_master
+    {
+        public int ledgercode { get; set; }
+        public string ledgername { get; set; }
+        public string lcode { get; set; }
+        public string ldgcode { get; set; }
+
+        public string taxtype { get; set; }
+        public string taxsubtype { get; set; }
+        public decimal taxpercentage { get; set; }
+
+        public decimal gstpercentage { get; set; }
+        public string hsncode { get; set; }
+
+        public bool isactive { get; set; }
+        public bool deleted { get; set; }
+        public DateTime createddate { get; set; }
+        public string? tenantcode { get; set; }
     }
 }

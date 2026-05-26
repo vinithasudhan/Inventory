@@ -17,6 +17,11 @@ namespace InventoryAPI.Controllers
         {
             itemclass = _imc;
         }
+        private string GetTenantCode() =>
+          Request.Headers["tenantcode"].ToString();
+
+        private IActionResult MissingTenantCode() =>
+            BadRequest(new { Status = "Failed", Message = "Header 'tenantcode' is required." });
         [HttpPost("insertitem")]
         public async Task<IActionResult> InsertItem([FromBody] item_master item)
         {
@@ -215,7 +220,7 @@ namespace InventoryAPI.Controllers
                 });
             }
         }
-        [HttpPut("updatepurchase")]
+        [HttpPost("updatepurchase")]
         public async Task<IActionResult> UpdatePurchase([FromBody] purchase_request request)
         {
             try
@@ -413,7 +418,7 @@ namespace InventoryAPI.Controllers
                 });
             }
         }
-        [HttpPut("updatepurchaseentry")]
+        [HttpPost("updatepurchaseentry")]
         public async Task<IActionResult> Update([FromBody] purchase_entry_request request)
         {
             var res = await itemclass.UpdatePurchaseEntry(request);
@@ -511,5 +516,138 @@ namespace InventoryAPI.Controllers
             var result = await itemclass.DeleteParentCategory(parentcategorycode);
             return Ok(result);
         }
+        
+     [HttpPost("insertledger")]
+    public async Task<IActionResult> InsertLedger([FromBody] ledger_master ledger)
+        {
+            try
+            {
+                var tenantcode = GetTenantCode();
+
+                if (string.IsNullOrEmpty(tenantcode))
+                    return MissingTenantCode();
+
+                ledger.tenantcode = tenantcode;
+
+                var result = await itemclass.InsertLedger(ledger);
+
+                return Ok(new
+                {
+                    Status = "Success",
+                    Message = ledger.ledgercode == 0
+                        ? "Ledger inserted successfully"
+                        : "Ledger updated successfully",
+                    LedgerCode = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    Status = "Failed",
+                    Message = ex.Message
+                });
+            }
+        }
+
+        // UPDATE LEDGER
+        [HttpPost("updateledger")]
+        public async Task<IActionResult> UpdateLedger([FromBody] ledger_master ledger)
+        {
+            try
+            {
+                var tenantcode = GetTenantCode();
+
+                if (string.IsNullOrEmpty(tenantcode))
+                    return MissingTenantCode();
+
+                ledger.tenantcode = tenantcode;
+
+                var res = await itemclass.UpdateLedger(ledger);
+
+                return res == "Updated Successfully"
+                    ? Ok(new
+                    {
+                        Status = "Success",
+                        Message = "Ledger updated successfully"
+                    })
+                    : BadRequest(new
+                    {
+                        Status = "Failed",
+                        Message = "Unable to update ledger"
+                    });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    Status = "Failed",
+                    Message = ex.Message
+                });
+            }
+        }
+
+        // GET LEDGER
+        [HttpGet("getledger")]
+        public async Task<IActionResult> GetLedger()
+        {
+            try
+            {
+                var tenantcode = GetTenantCode();
+
+                if (string.IsNullOrEmpty(tenantcode))
+                    return MissingTenantCode();
+
+                var result = await itemclass.GetLedger();
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    Status = "Failed",
+                    Message = ex.Message
+                });
+            }
+        }
+
+        // DELETE LEDGER
+
+        [HttpDelete("deleteledger")]
+        public async Task<IActionResult> DeleteLedger(int ledgercode)
+        {
+            var tenantcode = GetTenantCode();
+
+            if (string.IsNullOrEmpty(tenantcode))
+            {
+                return BadRequest(new
+                {
+                    Status = "Failed",
+                    Message = "Tenant code missing"
+                });
+            }
+
+            var result = await itemclass.DeleteLedger(ledgercode, tenantcode);
+
+            if (result)
+            {
+                return Ok(new
+                {
+                    Status = "Success",
+                    Message = "Ledger deleted successfully"
+                });
+            }
+
+            return NotFound(new
+            {
+                Status = "Failed",
+                Message = "Ledger not found"
+            });
+        }
     }
-}
+    }
+        
+    
+
+

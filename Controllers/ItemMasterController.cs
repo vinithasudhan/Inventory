@@ -645,8 +645,83 @@ namespace InventoryAPI.Controllers
                 Message = "Ledger not found"
             });
         }
+        [HttpPost("insertledgertype")]
+        public async Task<IActionResult> InsertLedgerType([FromBody] ledger_type_master ledger)
+        {
+            var result = await itemclass.InsertLedgerType(ledger);
+
+            return Ok(new
+            {
+                status = "Success",
+                message = result
+            });
+        }
+
+        // UPDATE
+        [HttpPost("updateledgertype")]
+        public async Task<IActionResult> UpdateLedgerType([FromBody] ledger_type_master ledger)
+        {
+            var result = await itemclass.UpdateLedgerType(ledger);
+
+            return Ok(new
+            {
+                status = "Success",
+                message = result
+            });
+        }
+
+        // DELETE
+        [HttpDelete("deleteledgertype")]
+        public async Task<IActionResult> DeleteLedgerType(int ledgertypecode)
+        {
+            var result = await itemclass.DeleteLedgerType(ledgertypecode);
+
+            return Ok(new
+            {
+                status = "Success",
+                message = result
+            });
+        }
+        [HttpPost("insertledgergroup")]
+        public async Task<IActionResult> InsertLedgerGroup([FromBody] ledger_group_master ledger)
+        {
+            var result = await itemclass.InsertLedgerGroup(ledger);
+
+            return Ok(new
+            {
+                status = "Success",
+                message = result
+            });
+        }
+
+        // UPDATE
+        [HttpPost("updateledgergroup")]
+        public async Task<IActionResult> UpdateLedgerGroup([FromBody] ledger_group_master ledger)
+        {
+            var result = await itemclass.UpdateLedgerGroup(ledger);
+
+            return Ok(new
+            {
+                status = "Success",
+                message = result
+            });
+        }
+
+        // DELETE
+        [HttpDelete("deleteledgergroup")]
+        public async Task<IActionResult> DeleteLedgerGroup(int ledgergroupcode)
+        {
+            var result = await itemclass.DeleteLedgerGroup(ledgergroupcode);
+
+            return Ok(new
+            {
+                status = "Success",
+                message = result
+            });
+        }
     }
-    }
+}
+    
         
     
 

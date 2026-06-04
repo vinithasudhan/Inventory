@@ -6,94 +6,203 @@
         public string itemname { get; set; }
         public string shortname { get; set; }
         public string description { get; set; }
+
         public int categorycode { get; set; }
         public int subcategorycode { get; set; }
+
         public int hsnCode { get; set; }
+
         public string itemtype { get; set; }
+
         public decimal gstpercentage { get; set; }
+
         public int uomcode { get; set; }
+
         public decimal purchaserate { get; set; }
+
         public decimal salesrate { get; set; }
+
         public decimal mrp { get; set; }
+
         public decimal currentstock { get; set; }
+
         public decimal minstock { get; set; }
+
         public decimal reorderlevel { get; set; }
+        public decimal packsize { get; set; }
+
         public bool batchrequired { get; set; }
+
         public bool expiryrequired { get; set; }
+
         public bool serialrequired { get; set; }
+
         public int brandcode { get; set; }
+
         public int manufacturercode { get; set; }
+
         public int taxcode { get; set; }
+
+        // New Fields
+
+        public int naturetype { get; set; }
+
+        // Asset = 1
+        // Liability = 2
+        // Expense = 3
+        // Income = 4
+
+        public string? manufacturername { get; set; }
+
+        public string? drugname { get; set; }
+
+        public string? packaging { get; set; }
+
         public bool isactive { get; set; }
+
         public bool deleted { get; set; }
+
         public DateTime createddate { get; set; }
+
         public int usercode { get; set; }
+
         public string tenantcode { get; set; }
     }
     public class vendor_master
     {
         public long vendorcode { get; set; }
+
         public string vendorname { get; set; }
+
         public string shortname { get; set; }
+
         public string vendortype { get; set; }
+
         public string contactperson { get; set; }
+
         public string phonenumber { get; set; }
+
         public string alternatephonenumber { get; set; }
+
         public string emailid { get; set; }
+
         public string website { get; set; }
+
         public string gstnumber { get; set; }
+
         public string pannumber { get; set; }
+
         public string taxid { get; set; }
+
         public string registrationnumber { get; set; }
+
+        // New Fields
+
+        public string? druglicenseno { get; set; }
+
+        public string? fssaino { get; set; }
+
+        public decimal? vendorrating { get; set; }
+
         public string addressline1 { get; set; }
+
         public string addressline2 { get; set; }
+
         public string landmark { get; set; }
+
         public string city { get; set; }
+
         public string district { get; set; }
+
         public string state { get; set; }
+
         public string postalcode { get; set; }
+
         public string countrycode { get; set; }
+
         public string countryname { get; set; }
+
         public string currencycode { get; set; }
+
         public string paymentterms { get; set; }
+
         public string creditperiod { get; set; }
+
         public string bankname { get; set; }
+
         public string accountnumber { get; set; }
+
         public string ifsccode { get; set; }
+
         public string swiftcode { get; set; }
+
         public string ibannumber { get; set; }
+
         public bool isactive { get; set; }
+
         public bool deleted { get; set; }
+
         public DateTime createddate { get; set; }
+
         public DateTime? modifieddate { get; set; }
+
         public long usercode { get; set; }
+
         public string tenantcode { get; set; }
+
         public string branchcode { get; set; }
     }
     public class purchase_master
     {
         public long purchasecode { get; set; }
+
         public string? billno { get; set; }
+
         public DateTime billdate { get; set; }
+
         public string? invoiceno { get; set; }
+
         public DateTime? invoicedate { get; set; }
+
         public long? vendorcode { get; set; }
+
         public decimal grossamount { get; set; }
+
         public decimal discountamount { get; set; }
+
         public decimal taxamount { get; set; }
+
         public decimal netamount { get; set; }
+
+        // New Fields
+        public decimal transportationcharges { get; set; }
+
+        public decimal roundoff { get; set; }
+
         public string? paymentmode { get; set; }
+
         public string? paymentstatus { get; set; }
+
         public string? currencycode { get; set; }
+
         public bool isactive { get; set; }
+
         public bool deleted { get; set; }
+
         public string? remarks { get; set; }
+
         public DateTime createddate { get; set; }
+
         public DateTime? modifieddate { get; set; }
+
         public long? usercode { get; set; }
+
         public string? tenantcode { get; set; }
+
         public string? branchcode { get; set; }
+
         public string? companycode { get; set; }
+
         public long grncode { get; set; }
     }
     public class purchase_detail
@@ -138,7 +247,14 @@
 
         public decimal rejectedqty { get; set; }
 
+        // Warehouse / Store
         public long? warehousecode { get; set; }
+
+        // Packaging
+        public string? packaging { get; set; }
+
+        // Manufacturer
+        public long? manufacturercode { get; set; }
 
         public string? tenantcode { get; set; }
     }

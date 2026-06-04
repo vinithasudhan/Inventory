@@ -2285,9 +2285,8 @@ namespace InventoryAPI.Data
                 {
                     try
                     {
-                        // Insert Sales Master
                         string masterQuery = @"
-                INSERT INTO sales_master
+                INSERT INTO public.sales_master
                 (
                     salescode,
                     billno,
@@ -2306,6 +2305,7 @@ namespace InventoryAPI.Data
                     deleted,
                     remarks,
                     createddate,
+                    modifieddate,
                     usercode,
                     tenantcode,
                     branchcode,
@@ -2331,6 +2331,7 @@ namespace InventoryAPI.Data
                     @deleted,
                     @remarks,
                     @createddate,
+                    @modifieddate,
                     @usercode,
                     @tenantcode,
                     @branchcode,
@@ -2338,11 +2339,14 @@ namespace InventoryAPI.Data
                     @ordercode
                 );";
 
-                        await conn.ExecuteAsync(masterQuery, request.master, trans);
+                        await conn.ExecuteAsync(
+                            masterQuery,
+                            request.master,
+                            trans
+                        );
 
-                        // Insert Details
                         string detailQuery = @"
-                INSERT INTO sales_detail
+                INSERT INTO public.sales_detail
                 (
                     salesdetailcode,
                     salescode,
@@ -2394,20 +2398,29 @@ namespace InventoryAPI.Data
                         foreach (var item in request.details)
                         {
                             item.salescode = request.master.salescode;
-                            await conn.ExecuteAsync(detailQuery, item, trans);
+
+                            await conn.ExecuteAsync(
+                                detailQuery,
+                                item,
+                                trans
+                            );
                         }
 
                         await trans.CommitAsync();
+
                         return "Sales Inserted Successfully";
                     }
-                    catch
+                    catch (Exception ex)
                     {
                         await trans.RollbackAsync();
-                        throw;
+
+                        return $"Error : {ex.Message}";
                     }
                 }
             }
-        }
+        
+    }
+        
         public async Task<string> UpdateSales(sales_request request)
         {
             using (var conn = new NpgsqlConnection(con))

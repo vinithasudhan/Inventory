@@ -22,7 +22,7 @@ namespace InventoryAPI.Data
 
 
 
-        public async Task<long> InsertItem(item_master item)
+        public async Task<string> InsertItem(item_master item)
         {
             try
             {
@@ -32,77 +32,138 @@ namespace InventoryAPI.Data
 
                     string query;
 
-                    // INSERT if new item
                     if (item.itemcode == 0)
                     {
                         query = @"
-                    INSERT INTO item_master
-                    (
-                        itemname,
-                        shortname,
-                        description,
-                        categorycode,
-                        subcategorycode,
-                        hsncode,
-                        itemtype,
-                        gstpercentage,
-                        uomcode,
-                        purchaserate,
-                        salesrate,
-                        mrp,
-                        isactive,
-                        deleted,
-                        createddate,
-                        usercode
-                    )
-                    VALUES
-                    (
-                        @itemname,
-                        @ShortName,
-                        @Description,
-                        @CategoryCode,
-                        @SubCategoryCode,
-                        @ItemType,
-                        @UomCode,
-                        @PurchaseRate,
-                        @SalesRate,
-                        @Mrp,
-                        @IsActive,
-                        @Deleted,
-                        CURRENT_TIMESTAMP,
-                        @UserCode
-                    )
-                    RETURNING itemcode;";
+                INSERT INTO item_master
+                (
+                    itemname,
+                    shortname,
+                    description,
+                    categorycode,
+                    subcategorycode,
+                    hsncode,
+                    itemtype,
+                    gstpercentage,
+                    uomcode,
+                    purchaserate,
+                    salesrate,
+                    mrp,
+                    currentstock,
+                    minstock,
+                    reorderlevel,
+                    packsize,
+                    isexpiry,
+                    expiryalertdays,
+                    batchrequired,
+                    expiryrequired,
+                    serialrequired,
+                    brandcode,
+                    manufacturercode,
+                    taxcode,
+                    naturetype,
+                    manufacturer,
+                    ledgergroupcode,
+                    drugname,
+                    packaging,
+                    isactive,
+                    deleted,
+                    createddate,
+                    usercode,
+                    tenantcode
+                )
+                VALUES
+                (
+                    @itemname,
+                    @shortname,
+                    @description,
+                    @categorycode,
+                    @subcategorycode,
+                    @hsnCode,
+                    @itemtype,
+                    @gstpercentage,
+                    @uomcode,
+                    @purchaserate,
+                    @salesrate,
+                    @mrp,
+                    @currentstock,
+                    @minstock,
+                    @reorderlevel,
+                    @packsize,
+                    @isexpiry,
+                    @expiryalertdays,
+                    @batchrequired,
+                    @expiryrequired,
+                    @serialrequired,
+                    @brandcode,
+                    @manufacturercode,
+                    @taxcode,
+                    @naturetype,
+                    @manufacturer,
+                    @ledgergroupcode,
+                    @drugname,
+                    @packaging,
+                    @isactive,
+                    @deleted,
+                    @createddate,
+                    @usercode,
+                    @tenantcode
+                )
+                RETURNING itemcode;";
+
+                        int itemcode = await db.ExecuteScalarAsync<int>(query, item);
+
+                        return $"Item Inserted Successfully. Item Code : {itemcode}";
                     }
                     else
                     {
-                        // UPDATE existing item
                         query = @"
-                    UPDATE item_master
-                    SET
-                        itemname = @itemname,
-                        shortname = @ShortName,
-                        description = @Description,
-                        categorycode = @CategoryCode,
-                        subcategorycode = @SubCategoryCode,
-                        itemtype = @ItemType,
-                        uomcode = @UomCode,
-                        purchaserate = @PurchaseRate,
-                        salesrate = @SalesRate,
-                         mrp = @Mrp,
-                        isactive = @IsActive,
-                        deleted = @Deleted,
-                        usercode = @UserCode
-                    WHERE itemcode = @ItemCode
-                    RETURNING itemcode;";
-                    }
+                UPDATE item_master
+                SET
+                    itemname = @itemname,
+                    shortname = @shortname,
+                    description = @description,
+                    categorycode = @categorycode,
+                    subcategorycode = @subcategorycode,
+                    hsncode = @hsnCode,
+                    itemtype = @itemtype,
+                    gstpercentage = @gstpercentage,
+                    uomcode = @uomcode,
+                    purchaserate = @purchaserate,
+                    salesrate = @salesrate,
+                    mrp = @mrp,
+                    currentstock = @currentstock,
+                    minstock = @minstock,
+                    reorderlevel = @reorderlevel,
+                    packsize = @packsize,
+                    isexpiry = @isexpiry,
+                    expiryalertdays = @expiryalertdays,
+                    batchrequired = @batchrequired,
+                    expiryrequired = @expiryrequired,
+                    serialrequired = @serialrequired,
+                    brandcode = @brandcode,
+                    manufacturercode = @manufacturercode,
+                    taxcode = @taxcode,
+                    naturetype = @naturetype,
+                    manufacturer = @manufacturer,
+                    ledgergroupcode = @ledgergroupcode,
+                    drugname = @drugname,
+                    packaging = @packaging,
+                    isactive = @isactive,
+                    deleted = @deleted,
+                    usercode = @usercode,
+                    tenantcode = @tenantcode
+                WHERE itemcode = @itemcode;";
 
-                    return await db.ExecuteScalarAsync<long>(query, item);
+                        await db.ExecuteAsync(query, item);
+
+                        return "Item Updated Successfully";
+                    }
                 }
             }
             catch (Exception ex)
             {
-                throw new Exception("Upsert failed: " + ex.Message);
+                return ex.Message;
             }
         }
         public async Task<long> UpsertVendor(vendor_master vendor)
@@ -2286,7 +2347,7 @@ namespace InventoryAPI.Data
                     try
                     {
                         string masterQuery = @"
-                INSERT INTO public.sales_master
+                INSERT INTO sales_master
                 (
                     salescode,
                     billno,
@@ -2346,7 +2407,7 @@ namespace InventoryAPI.Data
                         );
 
                         string detailQuery = @"
-                INSERT INTO public.sales_detail
+                INSERT INTO sales_detail
                 (
                     salesdetailcode,
                     salescode,

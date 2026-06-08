@@ -30,6 +30,11 @@
 
         public decimal reorderlevel { get; set; }
         public decimal packsize { get; set; }
+        public bool isexpiry { get; set; } = false;
+
+        // Alert before expiry (days)
+        public int? expiryalertdays { get; set; }
+
 
         public bool batchrequired { get; set; }
 
@@ -52,8 +57,9 @@
         // Expense = 3
         // Income = 4
 
-        public string? manufacturername { get; set; }
-
+        public string? manufacturer { get; set; }
+        
+        public int? ledgergroupcode { get; set; }
         public string? drugname { get; set; }
 
         public string? packaging { get; set; }
@@ -248,13 +254,13 @@
         public decimal rejectedqty { get; set; }
 
         // Warehouse / Store
-        public long? warehousecode { get; set; }
+        public string warehousecode { get; set; }
 
         // Packaging
         public string? packaging { get; set; }
 
         // Manufacturer
-        public long? manufacturercode { get; set; }
+        public string manufacturercode { get; set; }
 
         public string? tenantcode { get; set; }
     }

@@ -135,7 +135,7 @@ namespace InventoryAPI.Controllers
                 });
             }
         }
-        [HttpPut("updateitem")]
+        [HttpPost("updateitem")]
         public async Task<IActionResult> UpdateItem([FromBody] item_master item)
         {
             try

@@ -194,6 +194,9 @@ namespace InventoryAPI.Data
                         pannumber,
                         taxid,
                         registrationnumber,
+                         druglicenseno,
+                         fssaino,
+                        vendorrating,
                         addressline1,
                         addressline2,
                         landmark,
@@ -232,6 +235,10 @@ namespace InventoryAPI.Data
                         @PanNumber,
                         @TaxId,
                         @RegistrationNumber,
+                        @druglicenseno,
+                         @fssaino,
+                        @vendorrating,
+                        
                         @AddressLine1,
                         @AddressLine2,
                         @Landmark,
@@ -276,6 +283,9 @@ namespace InventoryAPI.Data
                         pannumber = @PanNumber,
                         taxid = @TaxId,
                         registrationnumber = @RegistrationNumber,
+                            druglicenseno = @druglicenseno,
+                            fssaino = @fssaino,
+                            vendorrating = @vendorrating,
                         addressline1 = @AddressLine1,
                         addressline2 = @AddressLine2,
                         landmark = @Landmark,
@@ -334,6 +344,9 @@ namespace InventoryAPI.Data
                     pannumber = @pannumber,
                     taxid = @taxid,
                     registrationnumber = @registrationnumber,
+                    druglicenseno = @druglicenseno,
+                    fssaino = @fssaino,
+                    vendorrating = @vendorrating,
                     addressline1 = @addressline1,
                     addressline2 = @addressline2,
                     landmark = @landmark,
@@ -2595,6 +2608,79 @@ namespace InventoryAPI.Data
                 await conn.ExecuteAsync(query, new { salescode });
 
                 return "Sales Deleted Successfully";
+            }
+        }
+        public async Task<string> UpsertWarehouse(warehouse_master warehouse)
+        {
+            try
+            {
+                using (IDbConnection db = new NpgsqlConnection(con))
+                {
+                    string query = @"
+            INSERT INTO warehouse_master
+            (
+                warehousecode,
+                warehousename,
+                shortname
+            )
+            VALUES
+            (
+                @warehousecode,
+                @warehousename,
+                @shortname
+            )
+            ON CONFLICT (warehousecode)
+            DO UPDATE SET
+                warehousename = EXCLUDED.warehousename,
+                shortname = EXCLUDED.shortname;";
+
+                    await db.ExecuteAsync(query, warehouse);
+
+                    return "Warehouse Upserted Successfully";
+                }
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        }
+        public async Task<string> DeleteWarehouse(int warehousecode)
+        {
+            try
+            {
+                using (IDbConnection db = new NpgsqlConnection(con))
+                {
+                    string query = @"UPDATE warehouse_master
+                             SET isdeleted = true
+                             WHERE warehousecode = @warehousecode";
+
+                    await db.ExecuteAsync(query, new { warehousecode });
+
+                    return "Warehouse Deleted Successfully";
+                }
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        }
+        public async Task<IEnumerable<warehouse_master>> GetWarehouseList()
+        {
+            try
+            {
+                using (IDbConnection db = new NpgsqlConnection(con))
+                {
+                    string query = @"SELECT *
+                             FROM warehouse_master
+                             WHERE isdeleted = false
+                             ORDER BY warehousecode";
+
+                    return await db.QueryAsync<warehouse_master>(query);
+                }
+            }
+            catch (Exception)
+            {
+                throw;
             }
         }
     }

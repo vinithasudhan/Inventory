@@ -1,7 +1,10 @@
-﻿using Inventory.Model;
+﻿using Dapper;
+using Inventory.Model;
 using InventoryAPI.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Npgsql;
+using System.Data;
 
 namespace InventoryAPI.Controllers
 {
@@ -47,32 +50,32 @@ namespace InventoryAPI.Controllers
                 });
             }
         }
-                [HttpPost("upsertvendor")]
+        [HttpPost("upsertvendor")]
 
-                public async Task<IActionResult> UpsertVendor([FromBody] vendor_master vendor)
+        public async Task<IActionResult> UpsertVendor([FromBody] vendor_master vendor)
+        {
+            try
+            {
+                var result = await itemclass.UpsertVendor(vendor);
+
+                return Ok(new
                 {
-                    try
-                    {
-                        var result = await itemclass.UpsertVendor(vendor);
-
-                        return Ok(new
-                        {
-                            Status = "Success",
-                            Message = vendor.vendorcode == 0
-                                ? "Vendor inserted successfully"
-                                : "Vendor updated successfully",
-                            VendorCode = result
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        return BadRequest(new
-                        {
-                            Status = "Failed",
-                            Message = ex.Message
-                        });
-                    }
-                }
+                    Status = "Success",
+                    Message = vendor.vendorcode == 0
+                        ? "Vendor inserted successfully"
+                        : "Vendor updated successfully",
+                    VendorCode = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    Status = "Failed",
+                    Message = ex.Message
+                });
+            }
+        }
         [HttpPut("updatevendor")]
         public async Task<IActionResult> UpdateVendor([FromBody] vendor_master vendor)
         {
@@ -433,7 +436,7 @@ namespace InventoryAPI.Controllers
         }
 
         [HttpPost("uploadexcel")]
-        
+
         public async Task<IActionResult> UploadExcel(IFormFile file)
         {
             try
@@ -516,9 +519,9 @@ namespace InventoryAPI.Controllers
             var result = await itemclass.DeleteParentCategory(parentcategorycode);
             return Ok(result);
         }
-        
-     [HttpPost("insertledger")]
-    public async Task<IActionResult> InsertLedger([FromBody] ledger_master ledger)
+
+        [HttpPost("insertledger")]
+        public async Task<IActionResult> InsertLedger([FromBody] ledger_master ledger)
         {
             try
             {
@@ -918,8 +921,56 @@ namespace InventoryAPI.Controllers
                 });
             }
         }
+        [HttpPost("upsertwarehouse")]
+        public async Task<IActionResult> Upsert([FromBody] warehouse_master warehouse)
+        {
+            try
+            {
+                var result = await itemclass.UpsertWarehouse(warehouse);
+                return Ok(new
+                {
+                    status = true,
+                    message = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    status = false,
+                    message = ex.Message
+                });
+            }
+        }
+        [HttpGet("getallwarehouse")]
+        public async Task<IActionResult> GetAllS()
+        {
+            try
+            {
+                var result = await itemclass.GetWarehouseList();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        [HttpDelete("deletewarehouse")]
+        public async Task<IActionResult> Delete(int warehousecode)
+        {
+            try
+            {
+                var result = await itemclass.DeleteWarehouse(warehousecode);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
+
     
         
     

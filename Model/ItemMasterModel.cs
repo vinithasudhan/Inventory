@@ -83,7 +83,7 @@
         public string vendorname { get; set; }
 
         public string shortname { get; set; }
-
+        
         public string vendortype { get; set; }
 
         public string contactperson { get; set; }
@@ -256,13 +256,13 @@
         public decimal rejectedqty { get; set; }
 
         // Warehouse / Store
-        public string warehousecode { get; set; }
+        public long warehousecode { get; set; }
 
         // Packaging
         public string? packaging { get; set; }
 
         // Manufacturer
-        public string manufacturercode { get; set; }
+        public long manufacturercode { get; set; }
 
         public string? tenantcode { get; set; }
     }
@@ -638,7 +638,7 @@
     }
     public class warehouse_master
     {
-        public int warehousecode { get; set; }
+        public long warehousecode { get; set; }
         public int orderno { get; set; }
 
         public string warehousename { get; set; }
@@ -652,6 +652,23 @@
         public bool isdeleted { get; set; }
 
         public DateTime createddate { get; set; }
+    }
+    public class manufacturer_master
+    {
+        public long manufacturercode { get; set; }
+        public string manufacturername { get; set; }
+        public string shortname { get; set; }
+        public string description { get; set; }
+        public string contactperson { get; set; }
+        public string phoneno { get; set; }
+        public string email { get; set; }
+        public string address { get; set; }
+        public string gstno { get; set; }
+        public bool isactive { get; set; }
+        public bool deleted { get; set; }
+        public DateTime createddate { get; set; }
+        public int usercode { get; set; }
+        public string tenantcode { get; set; }
     }
 }
 

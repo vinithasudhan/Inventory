@@ -152,6 +152,8 @@ namespace InventoryAPI.Data
                     isactive = @isactive,
                     deleted = @deleted,
                     usercode = @usercode,
+                    schedule = @schedule,
+                    isnarcoticdrug = @isnarcoticdrug,
                     tenantcode = @tenantcode
                 WHERE itemcode = @itemcode;";
 
@@ -479,8 +481,9 @@ namespace InventoryAPI.Data
                 {
                     try
                     {
+                        // Purchase Master Insert
                         string masterQuery = @"
-                INSERT INTO public.purchase_master
+                INSERT INTO purchase_master
                 (
                     billno,
                     billdate,
@@ -531,11 +534,11 @@ namespace InventoryAPI.Data
                         long purchasecode = await db.ExecuteScalarAsync<long>(
                             masterQuery,
                             request.master,
-                            transaction
-                        );
+                            transaction);
 
+                        // Purchase Detail Insert
                         string detailQuery = @"
-                INSERT INTO public.purchase_detail
+                INSERT INTO purchase_detail
                 (
                     purchasecode,
                     itemcode,
@@ -589,8 +592,119 @@ namespace InventoryAPI.Data
                             await db.ExecuteAsync(
                                 detailQuery,
                                 item,
-                                transaction
-                            );
+                                transaction);
+
+                            // Check stock exists
+                            string checkStockQuery = @"
+                    SELECT stockcode
+                    FROM stock_master
+                    WHERE itemcode = @itemcode
+                    AND warehousecode = @warehousecode
+                    AND batchno = @batchno;";
+
+                            var stockcode = await db.ExecuteScalarAsync<long?>(
+                                checkStockQuery,
+                                new
+                                {
+                                    item.itemcode,
+                                    item.warehousecode,
+                                    item.batchno
+                                },
+                                transaction);
+
+                            // Update Existing Stock
+                            if (stockcode.HasValue)
+                            {
+                                string updateStockQuery = @"
+                        UPDATE stock_master
+                        SET
+                            purchasedqty = purchasedqty + @receivedqty,
+                            closingstock = closingstock + @receivedqty,
+                            unitcost = @rate,
+                            stockvalue =
+                                (closingstock + @receivedqty) * @rate,
+                            modifieddate = CURRENT_TIMESTAMP
+                        WHERE stockcode = @stockcode;";
+
+                                await db.ExecuteAsync(
+                                    updateStockQuery,
+                                    new
+                                    {
+                                        stockcode = stockcode.Value,
+                                        item.receivedqty,
+                                        item.rate
+                                    },
+                                    transaction);
+                            }
+                            else
+                            {
+                                // Insert New Stock Record
+                                string insertStockQuery = @"
+                        INSERT INTO stock_master
+                        (
+                            itemcode,
+                            warehousecode,
+                            branchcode,
+                            openingstock,
+                            purchasedqty,
+                            soldqty,
+                            damagedqty,
+                            returnqty,
+                            closingstock,
+                            unitcost,
+                            stockvalue,
+                            batchno,
+                            manufacturingdate,
+                            expirydate,
+                            isactive,
+                            deleted,
+                            createddate,
+                            usercode,
+                            tenantcode,
+                            companycode
+                        )
+                        VALUES
+                        (
+                            @itemcode,
+                            @warehousecode,
+                            @branchcode,
+                            0,
+                            @receivedqty,
+                            0,
+                            0,
+                            0,
+                            @receivedqty,
+                            @rate,
+                            (@receivedqty * @rate),
+                            @batchno,
+                            @manufacturingdate,
+                            @expirydate,
+                            true,
+                            false,
+                            CURRENT_TIMESTAMP,
+                            @usercode,
+                            @tenantcode,
+                            @companycode
+                        );";
+
+                                await db.ExecuteAsync(
+                                    insertStockQuery,
+                                    new
+                                    {
+                                        item.itemcode,
+                                        item.warehousecode,
+                                        branchcode = request.master.branchcode,
+                                        item.receivedqty,
+                                        item.rate,
+                                        item.batchno,
+                                        item.manufacturingdate,
+                                        item.expirydate,
+                                        usercode = request.master.usercode,
+                                        tenantcode = request.master.tenantcode,
+                                        companycode = request.master.companycode
+                                    },
+                                    transaction);
+                            }
                         }
 
                         transaction.Commit();
@@ -600,7 +714,7 @@ namespace InventoryAPI.Data
                     catch (Exception ex)
                     {
                         transaction.Rollback();
-                        throw new Exception("Purchase insert failed: " + ex.Message);
+                        throw new Exception("Purchase Insert Failed : " + ex.Message);
                     }
                 }
             }
@@ -2620,19 +2734,39 @@ namespace InventoryAPI.Data
             INSERT INTO warehouse_master
             (
                 warehousecode,
+                orderno,
                 warehousename,
-                shortname
+                shortname,
+                description,
+                location,
+                tenantcode,
+                isactive,
+                isdeleted,
+                createddate
             )
             VALUES
             (
                 @warehousecode,
+                @orderno,
                 @warehousename,
-                @shortname
+                @shortname,
+                @description,
+                @location,
+                @tenantcode,
+                @isactive,
+                @isdeleted,
+                @createddate
             )
             ON CONFLICT (warehousecode)
             DO UPDATE SET
                 warehousename = EXCLUDED.warehousename,
-                shortname = EXCLUDED.shortname;";
+               
+                shortname = EXCLUDED.shortname,
+                description = EXCLUDED.description,
+                location = EXCLUDED.location,
+                tenantcode = EXCLUDED.tenantcode,
+                isactive = EXCLUDED.isactive,
+                isdeleted = EXCLUDED.isdeleted;";
 
                     await db.ExecuteAsync(query, warehouse);
 
@@ -2681,6 +2815,124 @@ namespace InventoryAPI.Data
             catch (Exception)
             {
                 throw;
+            }
+        }
+        public async Task<string> UpsertManufacturer(manufacturer_master manufacturer)
+        {
+            try
+            {
+                using (IDbConnection db = new NpgsqlConnection(con))
+                {
+                    string query;
+
+                    if (manufacturer.manufacturercode == 0)
+                    {
+                        query = @"
+                INSERT INTO manufacturer_master
+                (
+                    manufacturername,
+                    shortname,
+                    description,
+                    contactperson,
+                    phoneno,
+                    email,
+                    address,
+                    gstno,
+                    isactive,
+                    deleted,
+                    createddate,
+                    usercode,
+                    tenantcode
+                )
+                VALUES
+                (
+                    @manufacturername,
+                    @shortname,
+                    @description,
+                    @contactperson,
+                    @phoneno,
+                    @email,
+                    @address,
+                    @gstno,
+                    @isactive,
+                    @deleted,
+                    @createddate,
+                    @usercode,
+                    @tenantcode
+                );";
+
+                        await db.ExecuteAsync(query, manufacturer);
+
+                        return "Manufacturer Created Successfully";
+                    }
+                    else
+                    {
+                        query = @"
+                UPDATE manufacturer_master
+                SET
+                    manufacturername = @manufacturername,
+                    shortname = @shortname,
+                    description = @description,
+                    contactperson = @contactperson,
+                    phoneno = @phoneno,
+                    email = @email,
+                    address = @address,
+                    gstno = @gstno,
+                    isactive = @isactive,
+                    usercode = @usercode,
+                    tenantcode = @tenantcode
+                WHERE manufacturercode = @manufacturercode;";
+
+                        await db.ExecuteAsync(query, manufacturer);
+
+                        return "Manufacturer Updated Successfully";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        }
+        public async Task<IEnumerable<manufacturer_master>> GetManufacturerList()
+        {
+            try
+            {
+                using (IDbConnection db = new NpgsqlConnection(con))
+                {
+                    string query = @"
+            SELECT *
+            FROM manufacturer_master
+            WHERE deleted = false
+            ORDER BY manufacturercode";
+
+                    return await db.QueryAsync<manufacturer_master>(query);
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        public async Task<string> DeleteManufacturer(long manufacturercode)
+        {
+            try
+            {
+                using (IDbConnection db = new NpgsqlConnection(con))
+                {
+                    string query = @"
+            UPDATE manufacturer_master
+            SET deleted = true
+            WHERE manufacturercode = @manufacturercode";
+
+                    await db.ExecuteAsync(query, new { manufacturercode });
+
+                    return "Manufacturer Deleted Successfully";
+                }
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
             }
         }
     }
